@@ -2,6 +2,8 @@ package com.henriquemgomes.cmpconverter.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.validation.Valid;
+
 /*
     CertTemplate ::= SEQUENCE {
         version      [0] Version               OPTIONAL,
@@ -31,7 +33,7 @@ public class CertTemplateModel {
 
     private OptionalValidityModel validity;
     
-    private String subject;
+    private DistinguishedNameModel subject;
 
     @JsonProperty("public_key")
     private String publicKey;
@@ -42,7 +44,8 @@ public class CertTemplateModel {
     @JsonProperty("subject_uid")
     private String subjectUID;
 
-    private String extensions;
+    @Valid()
+    private ExtensionsModel extensions;
 
     public CertTemplateModel() {
     }
@@ -87,11 +90,11 @@ public class CertTemplateModel {
         this.validity = validity;
     }
 
-    public String getSubject() {
+    public DistinguishedNameModel getSubject() {
         return this.subject;
     }
 
-    public void setSubject(String subject) {
+    public void setSubject(DistinguishedNameModel subject) {
         this.subject = subject;
     }
 
@@ -119,11 +122,11 @@ public class CertTemplateModel {
         this.subjectUID = subjectUID;
     }
 
-    public String getExtensions() {
+    public ExtensionsModel getExtensions() {
         return this.extensions;
     }
 
-    public void setExtensions(String extensions) {
+    public void setExtensions(ExtensionsModel extensions) {
         this.extensions = extensions;
     }
 }

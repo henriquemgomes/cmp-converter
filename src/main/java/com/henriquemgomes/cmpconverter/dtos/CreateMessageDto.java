@@ -1,14 +1,18 @@
 package com.henriquemgomes.cmpconverter.dtos;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.henriquemgomes.cmpconverter.enums.PKIBodyOptions;
 import com.henriquemgomes.cmpconverter.models.CertificationRequestModel;
+import com.henriquemgomes.cmpconverter.models.ExtraCertsModel;
 // import com.henriquemgomes.cmpconverter.models.PKIBodyModel;
 import com.henriquemgomes.cmpconverter.models.PKIHeaderModel;
 // import com.henriquemgomes.cmpconverter.validation.Conditional;
 import com.henriquemgomes.cmpconverter.validation.Conditional;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,6 +32,9 @@ public class CreateMessageDto {
     @NotNull(message = "header is required")
     @Valid
     private PKIHeaderModel header;
+
+    @JsonProperty("extra_certs")
+    private List<ExtraCertsModel> extraCerts;
 
     @JsonProperty("body")
     @Valid

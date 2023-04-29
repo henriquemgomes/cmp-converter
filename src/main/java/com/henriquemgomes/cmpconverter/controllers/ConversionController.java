@@ -38,11 +38,12 @@ public class ConversionController {
         }
     } 
 
-    @PostMapping()
-    public ResponseEntity<CreateMessageDto> convertToCMP(@RequestBody @Valid CreateMessageDto createMessageDto) {
-        System.out.println(this.conversionServices.size());
+    @PostMapping(consumes = {"application/json"}, produces = {"application/pkixcmp"})
+    public ResponseEntity<Object> convertToCMP(@RequestBody @Valid CreateMessageDto createMessageDto) throws Exception {
         ConversionInterface conversionService = this.getDynamicConversionService(createMessageDto.getType());
-        conversionService.convertToCmp(createMessageDto);
-        return new ResponseEntity<>(createMessageDto, HttpStatus.OK);
+        byte[] cmp = (byte[]) conversionService.convertToCmp(createMessageDto);
+        return new ResponseEntity<>(cmp, HttpStatus.OK);
+        // conversionService.convertToCmp(createMessageDto);
+        // return new ResponseEntity<>(createMessageDto, HttpStatus.OK);
     }
 }

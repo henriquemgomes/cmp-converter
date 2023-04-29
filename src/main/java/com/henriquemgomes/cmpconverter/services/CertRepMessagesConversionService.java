@@ -9,7 +9,6 @@ import com.henriquemgomes.cmpconverter.interfaces.ConversionInterface;
 public class CertRepMessagesConversionService implements ConversionInterface {
 
     public Object convertToCmp(CreateMessageDto createMessageDto) {
-        System.out.println("in other svc");
         return null;
     }
 }
