@@ -146,4 +146,14 @@ public class Utils {
 				);
 		}
 	}
+
+	public static String translateCMPMessageType(int type) throws CmpConverterException {
+		switch (type) {
+			case 2:
+				return "cr";
+		
+			default:
+				throw new CmpConverterException("translate.type.error", "Unsupported Type.", 901, HttpStatus.BAD_REQUEST, null);
+		}
+	}
 }

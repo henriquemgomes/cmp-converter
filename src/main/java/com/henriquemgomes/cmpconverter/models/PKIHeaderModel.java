@@ -1,7 +1,12 @@
 package com.henriquemgomes.cmpconverter.models;
 
+import java.util.List;
+
+import org.bouncycastle.asn1.cmp.InfoTypeAndValue;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 public class PKIHeaderModel {
@@ -26,10 +31,10 @@ public class PKIHeaderModel {
     */
     
     @NotNull(message = "header.sender is required.")
-    private String sender;
+    private DistinguishedNameModel sender;
 
     @NotNull(message = "header.recipient is required.")
-    private String recipient;
+    private DistinguishedNameModel recipient;
 
     @JsonProperty("message_time")
     private String messageTime;
@@ -53,24 +58,24 @@ public class PKIHeaderModel {
     private String recipNonce;
 
     @JsonProperty("general_info")
-    private String generalInfo;
+    private InfoTypeAndValueModel generalInfo;
 
     public PKIHeaderModel() {
     }
 
-    public String getSender() {
+    public DistinguishedNameModel getSender() {
         return this.sender;
     }
 
-    public void setSender(String sender) {
+    public void setSender(DistinguishedNameModel sender) {
         this.sender = sender;
     }
 
-    public String getRecipient() {
+    public DistinguishedNameModel getRecipient() {
         return this.recipient;
     }
 
-    public void setRecipient(String recipient) {
+    public void setRecipient(DistinguishedNameModel recipient) {
         this.recipient = recipient;
     }
 
@@ -130,11 +135,11 @@ public class PKIHeaderModel {
         this.recipNonce = recipNonce;
     }
 
-    public String getGeneralInfo() {
+    public InfoTypeAndValueModel getGeneralInfo() {
         return this.generalInfo;
     }
 
-    public void setGeneralInfo(String generalInfo) {
+    public void setGeneralInfo(InfoTypeAndValueModel generalInfo) {
         this.generalInfo = generalInfo;
     }
 }

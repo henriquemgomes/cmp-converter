@@ -1,6 +1,10 @@
 package com.henriquemgomes.cmpconverter.models;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import com.henriquemgomes.cmpconverter.models.AttributeTypeAndValueModel;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -27,7 +31,6 @@ public class CertRequestModel {
     @Valid
     private CertTemplateModel certTemplate;
 
-    @Valid
     private ControlsModel controls;
 
     public CertRequestModel() {
@@ -38,7 +41,7 @@ public class CertRequestModel {
         this.certTemplate = certTemplate;
     }
 
-    public CertRequestModel(int certReqId, CertTemplateModel certTemplate, ControlsModel controls) {
+    public CertRequestModel(int certReqId, CertTemplateModel certTemplate,  ControlsModel controls) {
         this.certReqId = certReqId;
         this.certTemplate = certTemplate;
         this.controls = controls;

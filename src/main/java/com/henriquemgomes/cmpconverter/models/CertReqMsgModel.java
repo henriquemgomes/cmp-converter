@@ -26,7 +26,7 @@ public class CertReqMsgModel {
     //TODO private ProofOfPossession popo;
 
     @JsonProperty("reg_info")
-    private List<@Valid AttributeTypeAndValueModel> regInfo;
+    private RegInfoModel regInfo;
 
     public CertReqMsgModel() {
     }
@@ -35,7 +35,7 @@ public class CertReqMsgModel {
         this.certReq = certReq;
     }
 
-    public CertReqMsgModel(CertRequestModel certReq, List<AttributeTypeAndValueModel> regInfo) {
+    public CertReqMsgModel(CertRequestModel certReq, RegInfoModel regInfo) {
         this.certReq = certReq;
         this.regInfo = regInfo;
     }
@@ -48,11 +48,11 @@ public class CertReqMsgModel {
         this.certReq = certReq;
     }
 
-    public List<AttributeTypeAndValueModel> getRegInfo() {
+    public RegInfoModel getRegInfo() {
         return this.regInfo;
     }
 
-    public void setRegInfo(List<AttributeTypeAndValueModel> regInfo) {
+    public void setRegInfo(RegInfoModel regInfo) {
         this.regInfo = regInfo;
     }
 

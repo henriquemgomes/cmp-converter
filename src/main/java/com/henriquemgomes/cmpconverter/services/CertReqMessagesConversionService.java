@@ -8,38 +8,63 @@ import java.util.List;
 import java.util.TimeZone;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.cmp.PKIBody;
+import org.bouncycastle.asn1.crmf.AttributeTypeAndValue;
+import org.bouncycastle.asn1.crmf.CertReqMsg;
+import org.bouncycastle.asn1.crmf.CertRequest;
+import org.bouncycastle.asn1.crmf.CertTemplate;
+import org.bouncycastle.asn1.crmf.CertTemplateBuilder;
+import org.bouncycastle.asn1.crmf.Controls;
+import org.bouncycastle.asn1.crmf.OptionalValidity;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.cert.CertIOException;
+import org.bouncycastle.cert.crmf.AuthenticatorControl;
 import org.bouncycastle.cert.crmf.CertificateRequestMessage;
 import org.bouncycastle.cert.crmf.CertificateRequestMessageBuilder;
+import org.bouncycastle.cert.crmf.RegTokenControl;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.OtherName;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.henriquemgomes.cmpconverter.Utils;
 import com.henriquemgomes.cmpconverter.dtos.CreateMessageDto;
+import com.henriquemgomes.cmpconverter.enums.PKIBodyOptions;
 import com.henriquemgomes.cmpconverter.exceptions.CmpConverterException;
 import com.henriquemgomes.cmpconverter.interfaces.ConversionInterface;
+import com.henriquemgomes.cmpconverter.interfaces.BodyConverterInterface;
+import com.henriquemgomes.cmpconverter.models.AttributeTypeAndValueModel;
+import com.henriquemgomes.cmpconverter.models.UTF8PairsModel;
 import com.henriquemgomes.cmpconverter.models.CertReqMsgModel;
+import com.henriquemgomes.cmpconverter.models.CertRequestModel;
+import com.henriquemgomes.cmpconverter.models.CertTemplateModel;
+import com.henriquemgomes.cmpconverter.models.CertificationRequestModel;
+import com.henriquemgomes.cmpconverter.models.ControlsModel;
 import com.henriquemgomes.cmpconverter.models.ExtensionsModel;
 import com.henriquemgomes.cmpconverter.models.ExtraCertsModel;
 import com.henriquemgomes.cmpconverter.models.OptionalValidityModel;
+import com.henriquemgomes.cmpconverter.models.PKIBodyModel;
+import com.henriquemgomes.cmpconverter.models.RegInfoModel;
 import com.henriquemgomes.cmpconverter.models.SubjectAltNameModel;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class CertReqMessagesConversionService implements ConversionInterface {
+public class CertReqMessagesConversionService implements BodyConverterInterface {
+    
     private SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
     public CertReqMessagesConversionService() {
@@ -47,13 +72,30 @@ public class CertReqMessagesConversionService implements ConversionInterface {
 		this.sdf.setLenient(false);
     }
 
+    public int getType() {
+        return PKIBody.TYPE_CERT_REQ;
+    }
+
+    public ASN1Encodable getEncodable(byte[] content) {
+        return CertReqMsg.getInstance(content);
+    }
+
     public byte[] convertToCmp(CreateMessageDto createMessageDto) throws Exception {
-        log.info("Converting CertReqMessage to JSON.");
+        log.info("Converting CertReqMessage to CMP.");
   
         CertificateRequestMessageBuilder messageBuilder = this.getMessageBuilder(createMessageDto);
         CertificateRequestMessage certificateRequestMessage = messageBuilder.build();
-        log.info("CertReqMessage converted to JSON succesfully.");
-        return certificateRequestMessage.getEncoded();
+        CertReqMsg buildedMessage = certificateRequestMessage.toASN1Structure();
+
+        if(createMessageDto.getCertificationRequest().getCertReqMessages().get(0).getRegInfo() != null) {
+            AttributeTypeAndValue[] regInfo = this.getEncodedRegInfo(createMessageDto.getCertificationRequest().getCertReqMessages().get(0), createMessageDto.getExtraCerts());
+            buildedMessage = new CertReqMsg(buildedMessage.getCertReq(), buildedMessage.getPopo(), regInfo);
+        }
+       
+        // CertReqMessages certReqMessages = new CertReqMessages(certificateRequestMessage.toASN1Structure());
+
+        log.info("CertReqMessage converted to CMP succesfully.");
+        return buildedMessage.getEncoded();
     }
 
     private CertificateRequestMessageBuilder getMessageBuilder(CreateMessageDto createMessageDto) throws Exception {
@@ -122,7 +164,7 @@ public class CertReqMessagesConversionService implements ConversionInterface {
         }
 
         this.addExtensions(createMessageDto.getCertificationRequest().getCertReqMessages().get(0), messageBuilder);
-
+        this.addControls(createMessageDto.getCertificationRequest().getCertReqMessages().get(0), messageBuilder);
         log.info("CertificateRequestMessageBuilder created succesfully.");
         return messageBuilder;
     }
@@ -147,6 +189,20 @@ public class CertReqMessagesConversionService implements ConversionInterface {
                         null
                     );
             }
+        }
+    }
+
+    private void addControls(CertReqMsgModel certReqMsg, CertificateRequestMessageBuilder messageBuilder) throws CmpConverterException {
+        ControlsModel controls = certReqMsg.getCertReq().getControls();
+
+        if(controls.getAuthenticatorControl() != null) {
+            AuthenticatorControl control = new AuthenticatorControl(controls.getAuthenticatorControl().getValue());
+            messageBuilder.addControl(control);
+        }
+
+        if(controls.getRegTokenControl() != null) {
+            RegTokenControl control = new RegTokenControl(controls.getRegTokenControl().getValue());
+            messageBuilder.addControl(control);
         }
     }
 
@@ -192,7 +248,156 @@ public class CertReqMessagesConversionService implements ConversionInterface {
                 return null;
         }
     }
+
+    private AttributeTypeAndValue[] getEncodedRegInfo(CertReqMsgModel certReqMsg, List<ExtraCertsModel> extraCerts) throws Exception {
+        RegInfoModel regInfo = certReqMsg.getRegInfo();
+        ArrayList<AttributeTypeAndValue> encodedRegInfoList = new ArrayList<AttributeTypeAndValue>();
+        AttributeTypeAndValue[] encodedRegInfoArray = {};
+
+        if (regInfo.getUtf8pairs() != null && regInfo.getUtf8pairs().size() > 0) {
+            for (UTF8PairsModel utf8Pairs : regInfo.getUtf8pairs()) {
+                AttributeTypeAndValue encodedRegInfo = new AttributeTypeAndValue(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.7.5.2.1"), 
+                new DERTaggedObject(12, new DERUTF8String(utf8Pairs.getValue())));
+                encodedRegInfoList.add(encodedRegInfo);
+            }
+        }
+
+        if(regInfo.getCertReq().getControls() != null) {
+            CertTemplate certTemplate = this.createCertTemplate(regInfo.getCertReq().getCertTemplate(), extraCerts);
+            List<AttributeTypeAndValue> controlsList = new ArrayList<>();
+
+            if(regInfo.getCertReq().getControls().getAuthenticatorControl() != null) {
+                AuthenticatorControl control = new AuthenticatorControl(regInfo.getCertReq().getControls().getAuthenticatorControl().getValue());
+                controlsList.add(new AttributeTypeAndValue(control.getType(), control.getValue()));
+            }
+    
+            if(regInfo.getCertReq().getControls().getRegTokenControl() != null) {
+                RegTokenControl control = new RegTokenControl(regInfo.getCertReq().getControls().getRegTokenControl().getValue());
+                controlsList.add(new AttributeTypeAndValue(control.getType(), control.getValue()));
+            }
+
+            Controls controls = new Controls(controlsList.toArray(new AttributeTypeAndValue[] {}));
+
+            CertRequest certRequest = new CertRequest(regInfo.getCertReq().getCertReqId(), certTemplate, controls);
+
+            AttributeTypeAndValue encodedRegInfo = new AttributeTypeAndValue(new ASN1ObjectIdentifier("1.3.6.1.5.5.7.7.5.2.2"), certRequest);
+            encodedRegInfoList.add(encodedRegInfo);
+        }
+
+        return encodedRegInfoList.toArray(encodedRegInfoArray);
+    }
+
+    private CertTemplate createCertTemplate (CertTemplateModel certTemplate, List<ExtraCertsModel> extraCerts) throws Exception {
+        CertTemplateBuilder certTemplateBuilder = new CertTemplateBuilder();
+
+        if(certTemplate.getVersion() != null)
+            certTemplateBuilder.setVersion(Integer.parseInt(certTemplate.getVersion()));
+
+        if(certTemplate.getSerialNumber() != null)
+        certTemplateBuilder.setSerialNumber(new ASN1Integer(certTemplate.getSerialNumber().getBytes()));
+        // certTemplateBuilder.setSigningAlg();
+
+        //Deprecated
+        if(certTemplate.getIssuerUID() != null)
+            certTemplateBuilder.setIssuerUID(new DERBitString(certTemplate.getIssuerUID().getBytes()));
+
+        //Deprecated
+        if(certTemplate.getSubjectUID() != null)
+            certTemplateBuilder.setSubjectUID(new DERBitString(certTemplate.getSubjectUID().getBytes()));
+
+        if(certTemplate.getSubject() != null)
+            certTemplateBuilder.setSubject(new X500Name(Utils.generateDn(certTemplate.getSubject())));
+        
+        X500Name issuerDn = null;
+        ExtraCertsModel issuerCert = extraCerts.stream().filter(extraCert -> extraCert.getType().equals("issuer_cert")).findFirst().orElse(null);
+        if(issuerCert != null) {
+            Certificate recipientCert = Utils.getCertificateFromBase64(issuerCert.getContent()); 
+            issuerDn = recipientCert.getSubject();
+        }
+
+        if(issuerDn != null){
+            certTemplateBuilder.setIssuer(issuerDn);
+        }
+
+        if(certTemplate.getPublicKey() != null){
+            SubjectPublicKeyInfo subjectPublicKeyInfo = Utils.instantiatePublicKeyFromB64(certTemplate.getPublicKey());
+            certTemplateBuilder.setPublicKey(subjectPublicKeyInfo);
+        }
+
+        OptionalValidityModel validity = certTemplate.getValidity();
+
+        Date notBefore = null;
+        Date notAfter = null;
+
+        if(validity != null) {
+            if(validity.getNotBefore() != null) {
+                try {
+                    notBefore = sdf.parse(validity.getNotBefore());
+                } catch (Exception e) {
+                    throw new CmpConverterException(
+                        "cmp.error.parse.validity.not_before",
+                        "Failed to parse 'not_before' date. The required format is 'dd/MM/yyyy HH:mm:ss'. Timezone: UTC.",
+                        500,
+                        HttpStatus.UNPROCESSABLE_ENTITY,
+                        null
+                    );
+                }
+            }
+
+            if(validity.getNotAfter() != null) {
+                try {
+                    notAfter = sdf.parse(validity.getNotAfter());
+                } catch (Exception e) {
+                    throw new CmpConverterException(
+                        "cmp.error.parse.validity.not_after",
+                        "Failed to parse 'not_after' date. The required format is 'dd/MM/yyyy HH:mm:ss'. Timezone: UTC.",
+                        501,
+                        HttpStatus.UNPROCESSABLE_ENTITY,
+                        null
+                    );
+                }
+            }
+
+            if(notAfter != null || notBefore != null) {
+                certTemplateBuilder.setValidity(new OptionalValidity(new Time(notBefore), new Time(notAfter)));
+            }
+        }
+
+        if(certTemplate.getExtensions() != null) {
+            ExtensionsModel extensionsModel = certTemplate.getExtensions();
+            List<Extension> extensionList = new ArrayList<>();
+    
+            if (extensionsModel.getSubjectAltNames() != null) {
+                List<ASN1Encodable> encodableSubAltNameList = new ArrayList<>();
+                for (SubjectAltNameModel subjectAltName : extensionsModel.getSubjectAltNames()) {
+                    ASN1Encodable subjectAltNameContent = this.generateSubjectAltNameContent(subjectAltName);
+    
+                    encodableSubAltNameList.add(subjectAltNameContent);
+                }
+                Extension subAltName = Extension.create(Extension.subjectAlternativeName, false, new DERSequence(encodableSubAltNameList.toArray(new ASN1Encodable[] {})));    
+                extensionList.add(subAltName);
+            }
+            
+            certTemplateBuilder.setExtensions(new Extensions(extensionList.toArray(new Extension[] {})));
+        }
+
+        return certTemplateBuilder.build();
+    }
     // TODO remover
     // throw new CmpConverterException("converter.erro.converter.cert.req.message", "Erro ao converter.", 100, HttpStatus.UNPROCESSABLE_ENTITY, null);
 
+    @Override
+    public PKIBodyModel createBodyModel(PKIBody pkiBody) throws CmpConverterException {
+        CertificationRequestModel pkiBodyModel = new CertificationRequestModel();
+        CertReqMsg certReqMsg = CertReqMsg.getInstance(pkiBody.getContent());
+        
+        pkiBodyModel.instantiate(certReqMsg);
+
+        return pkiBodyModel;
+    }
+
 }
+
+//TODO
+// ADD CONTROLS NO CERT TEMPLATE
+// TRATAMENTO DE ERRO
