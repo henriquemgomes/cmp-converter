@@ -26,6 +26,12 @@ public class SubjectAltNameModel {
     public SubjectAltNameModel() {
     }
 
+    public SubjectAltNameModel(String oid, String value, String generalName) {
+        this.oid = oid;
+        this.value = value;
+        this.generalName = generalName;
+    }
+
     public String getOid() {
         return this.oid;
     }

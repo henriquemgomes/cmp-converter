@@ -41,14 +41,10 @@ import org.springframework.stereotype.Service;
 
 import com.henriquemgomes.cmpconverter.Utils;
 import com.henriquemgomes.cmpconverter.dtos.CreateMessageDto;
-import com.henriquemgomes.cmpconverter.enums.PKIBodyOptions;
 import com.henriquemgomes.cmpconverter.exceptions.CmpConverterException;
-import com.henriquemgomes.cmpconverter.interfaces.ConversionInterface;
 import com.henriquemgomes.cmpconverter.interfaces.BodyConverterInterface;
-import com.henriquemgomes.cmpconverter.models.AttributeTypeAndValueModel;
 import com.henriquemgomes.cmpconverter.models.UTF8PairsModel;
 import com.henriquemgomes.cmpconverter.models.CertReqMsgModel;
-import com.henriquemgomes.cmpconverter.models.CertRequestModel;
 import com.henriquemgomes.cmpconverter.models.CertTemplateModel;
 import com.henriquemgomes.cmpconverter.models.CertificationRequestModel;
 import com.henriquemgomes.cmpconverter.models.ControlsModel;
@@ -290,7 +286,7 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
     private CertTemplate createCertTemplate (CertTemplateModel certTemplate, List<ExtraCertsModel> extraCerts) throws Exception {
         CertTemplateBuilder certTemplateBuilder = new CertTemplateBuilder();
 
-        if(certTemplate.getVersion() != null)
+        if(certTemplate.getVersion() != null) 
             certTemplateBuilder.setVersion(Integer.parseInt(certTemplate.getVersion()));
 
         if(certTemplate.getSerialNumber() != null)
@@ -298,12 +294,24 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
         // certTemplateBuilder.setSigningAlg();
 
         //Deprecated
-        if(certTemplate.getIssuerUID() != null)
-            certTemplateBuilder.setIssuerUID(new DERBitString(certTemplate.getIssuerUID().getBytes()));
+        if(certTemplate.getIssuerUID() != null){
+            if(certTemplate.getIssuerUID().startsWith("#"))
+                certTemplateBuilder.setIssuerUID(new DERBitString(Utils.decodeHexString(certTemplate.getIssuerUID().substring(1))));
+            else if(certTemplate.getIssuerUID().startsWith("n"))
+                certTemplateBuilder.setIssuerUID(new DERBitString(Utils.encodeBigInteger(new BigInteger(certTemplate.getIssuerUID().substring(1)))));
+            else
+                certTemplateBuilder.setIssuerUID(new DERBitString(certTemplate.getIssuerUID().getBytes()));
+        }
 
         //Deprecated
-        if(certTemplate.getSubjectUID() != null)
-            certTemplateBuilder.setSubjectUID(new DERBitString(certTemplate.getSubjectUID().getBytes()));
+        if(certTemplate.getSubjectUID() != null){
+            if(certTemplate.getSubjectUID().startsWith("#"))
+                certTemplateBuilder.setSubjectUID(new DERBitString(Utils.decodeHexString(certTemplate.getSubjectUID().substring(1))));
+            else if(certTemplate.getSubjectUID().startsWith("n"))
+                certTemplateBuilder.setSubjectUID(new DERBitString(Utils.encodeBigInteger(new BigInteger(certTemplate.getSubjectUID().substring(1)))));
+            else
+                certTemplateBuilder.setSubjectUID(new DERBitString(certTemplate.getSubjectUID().getBytes()));
+        }
 
         if(certTemplate.getSubject() != null)
             certTemplateBuilder.setSubject(new X500Name(Utils.generateDn(certTemplate.getSubject())));

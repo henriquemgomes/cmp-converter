@@ -1,5 +1,6 @@
 package com.henriquemgomes.cmpconverter.services;
 
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -55,11 +56,21 @@ public class PKIHeaderConversionService {
         }
 
         if (pkiHeaderModel.getSenderKID() != null) {
-            pkiHeaderBuilder.setSenderKID(pkiHeaderModel.getSenderKID().getBytes());
+            if(pkiHeaderModel.getSenderKID().startsWith("#"))
+                pkiHeaderBuilder.setSenderKID(Utils.decodeHexString(pkiHeaderModel.getSenderKID().substring(1)));
+            else if(pkiHeaderModel.getSenderKID().startsWith("n"))
+                pkiHeaderBuilder.setSenderKID(Utils.encodeBigInteger(new BigInteger(pkiHeaderModel.getSenderKID().substring(1))));
+            else
+                pkiHeaderBuilder.setSenderKID(pkiHeaderModel.getSenderKID().getBytes());
         }
 
         if (pkiHeaderModel.getRecipKID() != null) {
-            pkiHeaderBuilder.setRecipKID(pkiHeaderModel.getRecipKID().getBytes());
+            if(pkiHeaderModel.getRecipKID().startsWith("#"))
+                pkiHeaderBuilder.setRecipKID(Utils.decodeHexString(pkiHeaderModel.getRecipKID().substring(1)));
+            else if(pkiHeaderModel.getRecipKID().startsWith("n"))
+                pkiHeaderBuilder.setRecipKID(Utils.encodeBigInteger(new BigInteger(pkiHeaderModel.getRecipKID().substring(1))));
+            else
+                pkiHeaderBuilder.setRecipKID(pkiHeaderModel.getRecipKID().getBytes());
         }
 
         if (pkiHeaderModel.getTransactionID() != null) {
@@ -67,15 +78,21 @@ public class PKIHeaderConversionService {
         }
 
         if (pkiHeaderModel.getSenderNonce() != null) {
-            pkiHeaderBuilder.setSenderNonce(pkiHeaderModel.getSenderNonce().getBytes());
-        }
-
-        if (pkiHeaderModel.getSenderNonce() != null) {
-            pkiHeaderBuilder.setSenderNonce(pkiHeaderModel.getSenderNonce().getBytes());
+            if(pkiHeaderModel.getSenderNonce().startsWith("#"))
+                pkiHeaderBuilder.setSenderNonce(Utils.decodeHexString(pkiHeaderModel.getSenderNonce().substring(1)));
+            else if(pkiHeaderModel.getSenderNonce().startsWith("n"))
+                pkiHeaderBuilder.setSenderNonce(Utils.encodeBigInteger(new BigInteger(pkiHeaderModel.getSenderNonce().substring(1))));
+            else
+                pkiHeaderBuilder.setSenderNonce(pkiHeaderModel.getSenderNonce().getBytes());
         }
 
         if (pkiHeaderModel.getRecipNonce() != null) {
-            pkiHeaderBuilder.setRecipNonce(pkiHeaderModel.getRecipNonce().getBytes());
+            if(pkiHeaderModel.getRecipNonce().startsWith("#"))
+                pkiHeaderBuilder.setRecipNonce(Utils.decodeHexString(pkiHeaderModel.getRecipNonce().substring(1)));
+            else if(pkiHeaderModel.getRecipNonce().startsWith("n"))
+                pkiHeaderBuilder.setRecipNonce(Utils.encodeBigInteger(new BigInteger(pkiHeaderModel.getRecipNonce().substring(1))));
+            else
+                pkiHeaderBuilder.setRecipNonce(pkiHeaderModel.getRecipNonce().getBytes());
         }
 
         if (pkiHeaderModel.getGeneralInfo() != null) {

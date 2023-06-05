@@ -1,11 +1,9 @@
 package com.henriquemgomes.cmpconverter.models;
 
-import java.util.List;
+import java.io.IOException;
+import org.bouncycastle.asn1.crmf.CertReqMsg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 
 
 
@@ -19,16 +17,23 @@ import jakarta.validation.constraints.NotNull;
  */
 
 public class CertReqMsgModel {
-    @NotNull(message = "body.cert_req_messages.Array<cert_req> is required")
+
     @JsonProperty("cert_req")
-    @Valid
     private CertRequestModel certReq;
+
     //TODO private ProofOfPossession popo;
 
     @JsonProperty("reg_info")
     private RegInfoModel regInfo;
 
     public CertReqMsgModel() {
+    }
+
+    public CertReqMsgModel(CertReqMsg certReqMsg) throws IOException {
+        CertRequestModel certRequestModel = new CertRequestModel(certReqMsg.getCertReq());
+        this.setCertReq(certRequestModel);
+        RegInfoModel regInfoModel = new RegInfoModel(certReqMsg.getRegInfo());
+        this.setRegInfo(regInfoModel);
     }
 
     public CertReqMsgModel(CertRequestModel certReq) {

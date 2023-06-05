@@ -3,6 +3,8 @@ package com.henriquemgomes.cmpconverter.dtos;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.henriquemgomes.cmpconverter.deserializers.PKIBodyOptionsDeserializer;
 import com.henriquemgomes.cmpconverter.enums.PKIBodyOptions;
 import com.henriquemgomes.cmpconverter.models.CertificationRequestModel;
 import com.henriquemgomes.cmpconverter.models.ExtraCertsModel;
@@ -30,6 +32,7 @@ public class CreateMessageDto {
     }
 
     @NotNull(message = "type is required")
+    @JsonDeserialize(using = PKIBodyOptionsDeserializer.class)
     private PKIBodyOptions type;
     
     @NotNull(message = "header is required")

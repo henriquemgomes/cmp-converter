@@ -4,16 +4,20 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +51,7 @@ public class Utils {
 			RDN organization = new RDN(new ASN1ObjectIdentifier("2.5.4.10"), new DERUTF8String(dnModel.getOrganization()));
 			rdnsList.add(organization);
 		}
-		
+
 		for (String ou : dnModel.getOrganizationalUnits()) {
 			if (ou != null) {
 				rdnsList.add(new RDN(new ASN1ObjectIdentifier("2.5.4.11"), new DERUTF8String(ou)));
@@ -57,6 +61,40 @@ public class Utils {
 		RDN[] rdns = new RDN[rdnsList.size()];
 		rdns = rdnsList.toArray(rdns);
 		return rdns;
+	}
+
+	public static DistinguishedNameModel parseDn(RDN[] distinguishedName) throws IOException {
+		DistinguishedNameModel dnModel = new DistinguishedNameModel();
+		List<String> organizationalUnits = new ArrayList<>();
+
+		for (RDN rdn : distinguishedName) {
+			switch (rdn.getFirst().getType().getId()) {
+				case "2.5.4.3":
+					dnModel.setCommonName(new String(rdn.getFirst().getValue().toString().getBytes()));
+					break;
+				case "2.5.4.6":
+					dnModel.setCountry(new String(rdn.getFirst().getValue().toString().getBytes()));
+					break;
+				case "2.5.4.7":
+					dnModel.setLocality(new String(rdn.getFirst().getValue().toString().getBytes()));
+					break;
+				case "2.5.4.8":
+					dnModel.setStateOrProvince(new String(rdn.getFirst().getValue().toString().getBytes()));
+					break;
+				case "2.5.4.10":
+					dnModel.setOrganization(new String(rdn.getFirst().getValue().toString().getBytes()));
+					break;
+				case "2.5.4.11":
+					organizationalUnits.add(new String(rdn.getFirst().getValue().toString().getBytes()));
+					break;
+				default:
+					break;
+			}
+		}
+
+		dnModel.setOrganizationalUnits(organizationalUnits);
+
+		return dnModel;
 	}
 
     public static Certificate getCertificateFromBase64(String jsonCACertificate) throws Exception {
@@ -156,4 +194,54 @@ public class Utils {
 				throw new CmpConverterException("translate.type.error", "Unsupported Type.", 901, HttpStatus.BAD_REQUEST, null);
 		}
 	}
+
+	public static String decodeHexBytesToString(byte[] bytes) {
+        String uidHex = Hex.toHexString(bytes);
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (int i = 0; i < uidHex.length(); i += 2) {
+            String hexByte = uidHex.substring(i, i + 2);
+            int decimal = Integer.parseInt(hexByte, 16);
+            char character = (char) decimal;
+            stringBuilder.append(character);
+        }
+
+        return stringBuilder.toString();
+    }
+
+	public static byte[] decodeHexString(String input) {
+        String[] hexOctets = input.split(":");
+
+        byte[] bytes = new byte[hexOctets.length];
+        for (int i = 0; i < hexOctets.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(hexOctets[i], 16);
+        }
+
+        return bytes;
+    }
+
+    public static String encodeToHexString(byte[] bytes) {
+        StringBuilder encodedString = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            if (encodedString.length() > 0) {
+                encodedString.append(":");
+            }
+            encodedString.append(String.format("%02X", bytes[i]));
+        }
+
+        return encodedString.toString();
+    }
+
+	public static byte[] encodeBigInteger(BigInteger number) {
+        byte[] bytes = number.toByteArray();
+
+        // Remove leading zero byte if present
+        if (bytes[0] == 0) {
+            byte[] trimmedBytes = new byte[bytes.length - 1];
+            System.arraycopy(bytes, 1, trimmedBytes, 0, trimmedBytes.length);
+            return trimmedBytes;
+        }
+
+        return bytes;
+    }
 }

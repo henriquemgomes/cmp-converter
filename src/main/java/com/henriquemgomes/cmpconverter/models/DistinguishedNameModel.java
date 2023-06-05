@@ -8,7 +8,6 @@ public class DistinguishedNameModel {
     @JsonProperty("common_name")
     String commonName;
 
-    String email;
     String organization;
 
     @JsonProperty("organizational_units")
@@ -29,14 +28,6 @@ public class DistinguishedNameModel {
 
     public void setCommonName(String commonName) {
         this.commonName = commonName;
-    }
-
-    public String getEmail() {
-        return this.email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     public String getOrganization() {
