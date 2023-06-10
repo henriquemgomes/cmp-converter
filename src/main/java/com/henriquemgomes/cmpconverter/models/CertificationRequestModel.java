@@ -2,6 +2,8 @@ package com.henriquemgomes.cmpconverter.models;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.bouncycastle.asn1.crmf.CertReqMessages;
 import org.bouncycastle.asn1.crmf.CertReqMsg;
 import org.springframework.http.HttpStatus;
 
@@ -38,13 +40,17 @@ public class CertificationRequestModel extends PKIBodyModel {
         this.certReqMessages = certReqMessages;
     }
 
-    public void instantiate(CertReqMsg certReqMsg) throws CmpConverterException {
+    public void instantiate(CertReqMessages certReqMessages) throws CmpConverterException {
         try {
             this.certReqMessages = new ArrayList<>();
             
-            CertReqMsgModel certReqMsgModel = new CertReqMsgModel(certReqMsg);
-    
-            this.certReqMessages.add(certReqMsgModel);
+            CertReqMsg[] certReqMsgs = certReqMessages.toCertReqMsgArray();
+
+            for (CertReqMsg certReqMsg : certReqMsgs) {
+                CertReqMsgModel certReqMsgModel = new CertReqMsgModel(certReqMsg);
+        
+                this.certReqMessages.add(certReqMsgModel);
+            }
             
         } catch (Exception e) {
             throw new CmpConverterException(

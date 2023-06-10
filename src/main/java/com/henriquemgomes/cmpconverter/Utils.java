@@ -5,18 +5,29 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -189,7 +200,8 @@ public class Utils {
 		switch (type) {
 			case 2:
 				return "cr";
-		
+			case 3:
+				return "cp";
 			default:
 				throw new CmpConverterException("translate.type.error", "Unsupported Type.", 901, HttpStatus.BAD_REQUEST, null);
 		}
@@ -244,4 +256,59 @@ public class Utils {
 
         return bytes;
     }
+
+	public static PrivateKey instantiatePrivateKeyFromB64(String jsonPrivKey)
+			throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+		// Provider necessário para KeyFactory funcionar
+		java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		byte[] privKey = org.apache.tomcat.util.codec.binary.Base64.decodeBase64(jsonPrivKey);
+		PrivateKey clientPvtKey = null;
+		// tenta construir a privateKey do tipo PEM inicialmente
+		try {
+			Reader privReader = new StringReader(new String(privKey));
+			PEMParser pParserKey = new PEMParser(privReader);
+			JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
+			Object clientKeyPair = null;
+			try {
+				clientKeyPair = pParserKey.readObject();
+			} catch (IOException e) {
+				String msg = "Erro ao parsear o PEM da private_key, verifique o campo";
+				log.error(msg + "; Motivo: " + e.getMessage());
+			} catch (StringIndexOutOfBoundsException e) {
+				String msg = "Erro ao parsear o PEM da private_key, tamanho da string fora do intervalo, verifique o campo";
+				log.error(msg + "; Motivo: " + e.getMessage());
+			} catch (Exception e) {
+				String msg = "Erro ao parsear o PEM da private_key, verifique o campo";
+				log.error(msg + "; Motivo: " + e.getMessage());
+			}
+			if (clientKeyPair instanceof PrivateKeyInfo) {
+				clientPvtKey = converter.getPrivateKey((PrivateKeyInfo) clientKeyPair);
+			} else {
+				clientPvtKey = converter.getPrivateKey(((PEMKeyPair) clientKeyPair).getPrivateKeyInfo());
+			}
+		} catch (NullPointerException e) {
+			// se não conseguiu construir é porque a chave está no formato base64
+			log.warn("A chave privada não é do tipo PEM.");
+			PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privKey);
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			try {
+				clientPvtKey = keyFactory.generatePrivate(keySpec);
+			} catch (Exception ex) {
+				String msg = "EOF Prematuro na private_key, verifique o campo";
+				log.error(msg + "; Motivo: " + e.getMessage());
+			}
+
+		}
+		return clientPvtKey;
+	}
+
+	public static PublicKey getPub(String pub) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        byte[] publicKeyBytes = Base64.decodeBase64(pub);
+
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
+
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+
+        return keyFactory.generatePublic(keySpec);
+	}
 }

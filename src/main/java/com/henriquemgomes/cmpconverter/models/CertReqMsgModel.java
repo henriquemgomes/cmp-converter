@@ -21,7 +21,7 @@ public class CertReqMsgModel {
     @JsonProperty("cert_req")
     private CertRequestModel certReq;
 
-    //TODO private ProofOfPossession popo;
+    private ProofOfPossessionModel popo;
 
     @JsonProperty("reg_info")
     private RegInfoModel regInfo;
@@ -59,6 +59,14 @@ public class CertReqMsgModel {
 
     public void setRegInfo(RegInfoModel regInfo) {
         this.regInfo = regInfo;
+    }
+
+    public ProofOfPossessionModel getPopo() {
+        return this.popo;
+    }
+
+    public void setPopo(ProofOfPossessionModel popo) {
+        this.popo = popo;
     }
 
 

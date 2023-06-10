@@ -1,5 +1,6 @@
 package com.henriquemgomes.cmpconverter.services;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -44,6 +45,8 @@ public class PKIMessageConversionService implements ConversionInterface {
             case ir:
             case cr:
                 return conversionServices.get("certReqMessagesConversionService");
+            case cp:
+                return conversionServices.get("certRepMessagesConversionService");
             default:
                 System.out.println("Type not supported");
                 return null;
@@ -54,13 +57,15 @@ public class PKIMessageConversionService implements ConversionInterface {
         PKIHeader pkiHeader = pkiHeaderConversionService.createPkiHeader(createMessageDto);
         
         BodyConverterInterface conversionService = this.getDynamicConversionService(createMessageDto.getType());
-        byte[] bodyContent = (byte[]) conversionService.convertToCmp(createMessageDto);
+        byte[] bodyContent = conversionService.convertToCmp(createMessageDto);
         PKIBody pkiBody = new PKIBody(conversionService.getType(), conversionService.getEncodable(bodyContent));
 
         CMPCertificate[] extraCerts = this.generateEncodedExtraCerts(createMessageDto.getExtraCerts());
 
         PKIMessage pkiMessage = new PKIMessage(pkiHeader, pkiBody, null, extraCerts);
-        return pkiMessage.getEncoded();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		pkiMessage.toASN1Primitive().encodeTo(bos);
+		return bos.toByteArray();
     }
 
     private CMPCertificate[] generateEncodedExtraCerts(List<ExtraCertsModel> extraCerts) {
@@ -84,11 +89,6 @@ public class PKIMessageConversionService implements ConversionInterface {
 
         PKIBodyModel pkiBodyModel = conversionService.createBodyModel(pkiBody);
 
-        CreateMessageDto createMessageDto = new CreateMessageDto();
-        createMessageDto.setType(type);
-        createMessageDto.setHeader(pkiHeaderModel);
-        createMessageDto.setBody(pkiBodyModel);
-
         List<ExtraCertsModel> extraCertsList = new ArrayList<>();
         if(pkiMessage.getExtraCerts() != null) {
             for (CMPCertificate extraCert : pkiMessage.getExtraCerts()) {
@@ -97,7 +97,9 @@ public class PKIMessageConversionService implements ConversionInterface {
                 extraCertsList.add(extraCertsModel);
             }
         }
-        createMessageDto.setExtraCerts(extraCertsList);
+
+        CreateMessageDto createMessageDto = new CreateMessageDto(type, pkiHeaderModel, extraCertsList);
+        createMessageDto.setBody(pkiBodyModel);
 
         return createMessageDto;
     }

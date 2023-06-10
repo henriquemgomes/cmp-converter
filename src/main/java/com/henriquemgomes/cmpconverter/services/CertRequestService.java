@@ -1,13 +1,24 @@
 package com.henriquemgomes.cmpconverter.services;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
@@ -29,12 +40,16 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.cert.crmf.AuthenticatorControl;
 import org.bouncycastle.cert.crmf.RegTokenControl;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.henriquemgomes.cmpconverter.Utils;
-import com.henriquemgomes.cmpconverter.dtos.CreateCertTemplateDto;
+import com.henriquemgomes.cmpconverter.dtos.SignCertRequestDto;
 import com.henriquemgomes.cmpconverter.exceptions.CmpConverterException;
 import com.henriquemgomes.cmpconverter.models.CertRequestModel;
 import com.henriquemgomes.cmpconverter.models.CertTemplateModel;
@@ -70,7 +85,9 @@ public class CertRequestService {
         Controls controls = new Controls(atvs);
 
         CertRequest certRequest = new CertRequest(certRequestModel.getCertReqId(), certTemplate, controls);
-        return certRequest.getEncoded();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		certRequest.toASN1Primitive().encodeTo(bos);
+		return bos.toByteArray();
     }
 
     public CertTemplate createCertTemplate (CertTemplateModel certTemplate, List<ExtraCertsModel> extraCerts) throws Exception {
@@ -223,5 +240,25 @@ public class CertRequestService {
             default:
                 return null;
         }
+    }
+
+    public HashMap<String, String> signCertRequest(SignCertRequestDto signCertRequestDto) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, OperatorCreationException {
+        PrivateKey pvt = Utils.instantiatePrivateKeyFromB64(signCertRequestDto.getPrivKey());
+        Security.addProvider(new BouncyCastleProvider());
+		Provider prov = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
+        ContentSigner signer = new JcaContentSignerBuilder("sha256withrsa").setProvider(prov).build(pvt);
+
+        CertRequest certRequest = CertRequest.getInstance(Base64.decodeBase64(signCertRequestDto.getCertRequest()));
+        byte[] contentToSign = certRequest.getEncoded();
+
+        OutputStream sOut = signer.getOutputStream();
+        
+		sOut.write(contentToSign);
+
+        sOut.close();
+
+        HashMap<String, String> result = new HashMap<>();
+        result.put("cert_request_signature", Base64.encodeBase64String(signer.getSignature()));
+        return result;
     }
 }
