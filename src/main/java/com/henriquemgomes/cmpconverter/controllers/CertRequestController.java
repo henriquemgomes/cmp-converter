@@ -29,7 +29,7 @@ public class CertRequestController {
         return new ResponseEntity<>(certTemplate, HttpStatus.OK);
     }
 
-    @PostMapping(value = "sign-cert-request", consumes = {"application/json"}, produces = {"application/json"})
+    @PostMapping(value = "sign", consumes = {"application/json"}, produces = {"application/json"})
     public ResponseEntity<Object> signCertRequest(@RequestBody @Valid SignCertRequestDto signCertRequestDto) throws Exception {
         HashMap<String, String> result = certRequestService.signCertRequest(signCertRequestDto);
         return new ResponseEntity<>(result, HttpStatus.OK);
