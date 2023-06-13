@@ -25,7 +25,6 @@ public class CertifiedKeyPairModel {
         if(certifiedKeyPair.getCertOrEncCert() != null)
             this.certOrEncCert = new CertOrEncCertModel(certifiedKeyPair.getCertOrEncCert());
         
-        //TODO melhorar objetos
         if(certifiedKeyPair.getPrivateKey() != null)
             this.privateKey = Base64.encodeBase64String(certifiedKeyPair.getPrivateKey().getValue().toASN1Primitive().getEncoded());
 

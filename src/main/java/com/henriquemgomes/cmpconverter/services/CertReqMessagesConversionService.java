@@ -125,7 +125,15 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
                 POPOSigningKey poposk = new POPOSigningKey(null, new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.840.113549.1.1.11")), sig);
                 popo = new ProofOfPossession(poposk);
                 buildedMessage = new CertReqMsg(buildedMessage.getCertReq(), popo, regInfo);
-                System.out.println(this.verifyPopoSigningKeySignature(buildedMessage));
+                if (!this.verifyPopoSigningKeySignature(buildedMessage)) {
+                    throw new CmpConverterException(
+                        "converter.error.popo.signature", 
+                        "Invalid popo signature",
+                        5055,
+                        HttpStatus.BAD_REQUEST,
+                        null
+                    );
+                }
             }
         } else {
             buildedMessage = new CertReqMsg(buildedMessage.getCertReq(), null, regInfo);
@@ -149,8 +157,8 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
         X500Name issuerDn = null;
         ExtraCertsModel issuerCert = createMessageDto.getExtraCerts().stream().filter(extraCert -> extraCert.getType().equals("issuer_cert")).findFirst().orElse(null);
         if(issuerCert != null) {
-            Certificate recipientCert = Utils.getCertificateFromBase64(issuerCert.getContent()); 
-            issuerDn = recipientCert.getSubject();
+            Certificate decodedIssuerCert = Utils.getCertificateFromBase64(issuerCert.getContent()); 
+            issuerDn = decodedIssuerCert.getSubject();
         }
 
         messageBuilder.setSubject(subjectDN);
@@ -224,7 +232,7 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
                 messageBuilder.addExtension(Extension.subjectAlternativeName, false, new DERSequence(encodableSubAltNameList.toArray(new ASN1Encodable[] {})));
             } catch (CertIOException e) {
                 throw new CmpConverterException(
-                        "converter.erro.add.extension.subAltName", "Failed to add subjectAltName extension: "+ e.getMessage(),
+                        "converter.error.add.extension.subAltName", "Failed to add subjectAltName extension: "+ e.getMessage(),
                         504,
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         null
@@ -236,15 +244,18 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
     private void addControls(CertReqMsgModel certReqMsg, CertificateRequestMessageBuilder messageBuilder) throws CmpConverterException {
         ControlsModel controls = certReqMsg.getCertReq().getControls();
 
-        if(controls.getAuthenticatorControl() != null) {
-            AuthenticatorControl control = new AuthenticatorControl(controls.getAuthenticatorControl().getValue());
-            messageBuilder.addControl(control);
+        if(controls != null) {
+            if(controls.getAuthenticatorControl() != null) {
+                AuthenticatorControl control = new AuthenticatorControl(controls.getAuthenticatorControl().getValue());
+                messageBuilder.addControl(control);
+            }
+    
+            if(controls.getRegTokenControl() != null) {
+                RegTokenControl control = new RegTokenControl(controls.getRegTokenControl().getValue());
+                messageBuilder.addControl(control);
+            }
         }
 
-        if(controls.getRegTokenControl() != null) {
-            RegTokenControl control = new RegTokenControl(controls.getRegTokenControl().getValue());
-            messageBuilder.addControl(control);
-        }
     }
 
     private ASN1Encodable generateSubjectAltNameContent(SubjectAltNameModel subjectAltName) throws CmpConverterException {
@@ -256,7 +267,7 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
                     oid = new ASN1ObjectIdentifier(subjectAltName.getOid());
                 } catch (Exception e) {
                     throw new CmpConverterException(
-                        "converter.erro.converter.subAltName", "Failed to parse subAltName oid "+ subjectAltName.getOid() +": "+ e.getMessage(),
+                        "converter.error.converter.subAltName", "Failed to parse subAltName oid "+ subjectAltName.getOid() +": "+ e.getMessage(),
                         502,
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         null
@@ -269,7 +280,7 @@ public class CertReqMessagesConversionService implements BodyConverterInterface 
                     value = subjectAltName.getValue().getBytes();
                 } catch (Exception e) {
                     throw new CmpConverterException(
-                        "converter.erro.converter.subAltName", "Failed to parse subAltName value identified by oid "+ subjectAltName.getOid() +": "+ e.getMessage(),
+                        "converter.error.converter.subAltName", "Failed to parse subAltName value identified by oid "+ subjectAltName.getOid() +": "+ e.getMessage(),
                         503,
                         HttpStatus.INTERNAL_SERVER_ERROR,
                         null

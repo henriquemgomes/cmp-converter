@@ -63,9 +63,11 @@ public class Utils {
 			rdnsList.add(organization);
 		}
 
-		for (String ou : dnModel.getOrganizationalUnits()) {
-			if (ou != null) {
-				rdnsList.add(new RDN(new ASN1ObjectIdentifier("2.5.4.11"), new DERUTF8String(ou)));
+		if (dnModel.getOrganizationalUnits() != null) {
+			for (String ou : dnModel.getOrganizationalUnits()) {
+				if (ou != null) {
+					rdnsList.add(new RDN(new ASN1ObjectIdentifier("2.5.4.11"), new DERUTF8String(ou)));
+				}
 			}
 		}
 
@@ -202,6 +204,10 @@ public class Utils {
 				return "cr";
 			case 3:
 				return "cp";
+			case 11:
+				return "rr";
+			case 12:
+				return "rp";
 			default:
 				throw new CmpConverterException("translate.type.error", "Unsupported Type.", 901, HttpStatus.BAD_REQUEST, null);
 		}
@@ -242,6 +248,17 @@ public class Utils {
         }
 
         return encodedString.toString();
+    }
+
+	public static BigInteger decodeHexToBigInteger(String hexOctetString) {
+        String[] hexOctets = hexOctetString.split(":");
+        BigInteger decimalInteger = BigInteger.ZERO;
+
+        for (String hexOctet : hexOctets) {
+            decimalInteger = decimalInteger.shiftLeft(8).add(new BigInteger(hexOctet, 16));
+        }
+
+        return decimalInteger;
     }
 
 	public static byte[] encodeBigInteger(BigInteger number) {

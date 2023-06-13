@@ -96,8 +96,16 @@ public class CertRequestService {
         if(certTemplate.getVersion() != null) 
             certTemplateBuilder.setVersion(Integer.parseInt(certTemplate.getVersion()));
 
-        if(certTemplate.getSerialNumber() != null)
-        certTemplateBuilder.setSerialNumber(new ASN1Integer(certTemplate.getSerialNumber().getBytes()));
+        if(certTemplate.getSerialNumber() != null){
+            if(certTemplate.getSerialNumber().startsWith("#")){
+                BigInteger serialNumber = Utils.decodeHexToBigInteger(certTemplate.getSerialNumber().substring(1));
+                certTemplateBuilder.setSerialNumber(new ASN1Integer(serialNumber));
+            }
+            else
+                certTemplateBuilder.setSerialNumber(new ASN1Integer(certTemplate.getSerialNumber().getBytes()));
+            
+        }
+
         // certTemplateBuilder.setSigningAlg();
 
         //Deprecated
@@ -124,7 +132,7 @@ public class CertRequestService {
             certTemplateBuilder.setSubject(new X500Name(Utils.generateDn(certTemplate.getSubject())));
         
         X500Name issuerDn = null;
-        ExtraCertsModel issuerCert = extraCerts.stream().filter(extraCert -> extraCert.getType().equals("issuer_cert")).findFirst().orElse(null);
+        ExtraCertsModel issuerCert = extraCerts.stream().filter(extraCert -> extraCert.getType().equals("recipient_cert")).findFirst().orElse(null);
         if(issuerCert != null) {
             Certificate recipientCert = Utils.getCertificateFromBase64(issuerCert.getContent()); 
             issuerDn = recipientCert.getSubject();

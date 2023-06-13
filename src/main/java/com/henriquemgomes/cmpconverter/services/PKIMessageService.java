@@ -73,9 +73,6 @@ public class PKIMessageService {
         v.add(pkiMessage.getHeader());
         v.add(pkiMessage.getBody());
 
-        System.out.println(Base64.encodeBase64String(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
-        System.out.println();
-        System.out.println(Base64.encodeBase64String(pkiMessage.getProtection().getBytes()));
         HashMap<String, Boolean> result = new HashMap<>();
         result.put("valid_pki_message_signature", protectedPkiMessage.verify(contentVerifierProvider));
         return result;
@@ -124,20 +121,6 @@ public class PKIMessageService {
         } else {
             return null;
         }
-    }
-
-    public void ejbca (String pkiMessage) throws Exception {
-        PKIMessage pkim = PKIMessage.getInstance(Base64.decodeBase64(pkiMessage));
-        CertReqMessages certReqMessages = CertReqMessages.getInstance(pkim.getBody().getContent());
-        CertReqMsg certReqMsg = CertReqMsg.getInstance(certReqMessages.getEncoded());
-
-        DERSequence seq = (DERSequence) certReqMsg.toASN1Primitive();
-        ASN1Encodable o2 = seq.getObjectAt(0);
-       System.out.println(Base64.encodeBase64String(seq.getEncoded()));
-        // ASN1Encodable o3 = ((DERSequence) o2).getObjectAt(0);
-        // CertRequest cr = CertRequest.getInstance(o3);
-        
-        System.out.println("test");
     }
     
 }

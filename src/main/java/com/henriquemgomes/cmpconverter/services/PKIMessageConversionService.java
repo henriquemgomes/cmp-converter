@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.cmp.PKIHeader;
 import org.bouncycastle.asn1.cmp.PKIMessage;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.henriquemgomes.cmpconverter.Utils;
@@ -40,16 +41,25 @@ public class PKIMessageConversionService implements ConversionInterface {
     @Autowired
     private PKIHeaderConversionService pkiHeaderConversionService;
 
-    private BodyConverterInterface getDynamicConversionService(PKIBodyOptions messageType) {
+    private BodyConverterInterface getDynamicConversionService(PKIBodyOptions messageType) throws CmpConverterException {
         switch (messageType) {
             case ir:
             case cr:
                 return conversionServices.get("certReqMessagesConversionService");
             case cp:
                 return conversionServices.get("certRepMessagesConversionService");
+            case rr:
+                return conversionServices.get("revocationRequestConversionService");
+            case rp:
+                return conversionServices.get("revocationResponseConversionService");
             default:
-                System.out.println("Type not supported");
-                return null;
+                throw new CmpConverterException(
+                    "converter.error.get.conversion.service", 
+                    "Unsupported body type.",
+                    10001,
+                    HttpStatus.BAD_REQUEST,
+                    null
+                );
         }
     }
 

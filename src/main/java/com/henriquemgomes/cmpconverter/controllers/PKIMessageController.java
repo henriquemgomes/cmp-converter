@@ -39,13 +39,6 @@ public class PKIMessageController {
         return new ResponseEntity<>(contentToSign, HttpStatus.OK);
     }
 
-    @PostMapping(value = "ejbca", consumes = {"application/json"}, produces = {"application/pkixcmp"})
-    public ResponseEntity<Object> ejbca(@RequestBody @Valid GenerateContentToSignDto generateContentToSignDto) throws Exception {
-        pkiMessageService.ejbca(generateContentToSignDto.getPkiMessage());
-        return new ResponseEntity<>(null, HttpStatus.OK);
-    }
-
-
     @PostMapping(value = "attatch-signature", consumes = {"application/json"}, produces = {"text/plain"})
     public ResponseEntity<Object> attatchSignature(@RequestBody @Valid AttatchPKIMessageSignatureDto attatchPKIMessageSignatureDto) throws Exception {
         byte[] protectedPKIMessage = (byte[]) pkiMessageService.attatchSignature(attatchPKIMessageSignatureDto);

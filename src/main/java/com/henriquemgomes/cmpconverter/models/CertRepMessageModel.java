@@ -36,7 +36,6 @@ public class CertRepMessageModel extends PKIBodyModel {
         this.response = response;
     }
 
-    //TODO tratamento
     public CertRepMessageModel instantiate(CertRepMessage certRepMessage) throws IOException {
         this.caPubs = new ArrayList<>();
 

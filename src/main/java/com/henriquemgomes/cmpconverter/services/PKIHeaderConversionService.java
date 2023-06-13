@@ -16,12 +16,14 @@ import org.bouncycastle.asn1.cmp.PKIHeaderBuilder;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNamesBuilder;
 import org.springframework.stereotype.Service;
 
 import com.henriquemgomes.cmpconverter.Utils;
 import com.henriquemgomes.cmpconverter.dtos.CreateMessageDto;
+import com.henriquemgomes.cmpconverter.models.ExtraCertsModel;
 import com.henriquemgomes.cmpconverter.models.PKIHeaderModel;
 
 @Service
@@ -38,8 +40,17 @@ public class PKIHeaderConversionService {
         PKIHeaderModel pkiHeaderModel = createMessageDto.getHeader();
 
         GeneralName sender = new GeneralName(new X500Name(Utils.generateDn(pkiHeaderModel.getSender())));
-        GeneralName recipient = new GeneralName(new X500Name(Utils.generateDn(pkiHeaderModel.getRecipient())));
 
+        ExtraCertsModel recipientCert = createMessageDto.getExtraCerts().stream().filter(extraCert -> extraCert.getType().equals("recipient_cert")).findFirst().orElse(null);
+        
+        GeneralName recipient = null;
+        if(recipientCert == null){
+            recipient = new GeneralName(new X500Name(Utils.generateDn(pkiHeaderModel.getRecipient())));
+        } else {
+            Certificate decodedRecipientCert = Utils.getCertificateFromBase64(recipientCert.getContent()); 
+            recipient = new GeneralName(decodedRecipientCert.getSubject());
+        }
+ 
         
         PKIHeaderBuilder pkiHeaderBuilder = new PKIHeaderBuilder(2, sender, recipient);
        

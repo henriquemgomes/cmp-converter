@@ -35,7 +35,6 @@ public class RegInfoModel {
                     utf8PairsList.add(new UTF8PairsModel(taggedObject.getBaseObject().toString()));
                 }
 
-                //TODO Transformar em func. e usar no outro certTemplate
                 if(attributeTypeAndValue.getType().toString().equals("1.3.6.1.5.5.7.7.5.2.2")){
                     CertRequest certRequest = CertRequest.getInstance(attributeTypeAndValue.getValue());
                     CertRequestModel regInfoCertRequestModel = new CertRequestModel();

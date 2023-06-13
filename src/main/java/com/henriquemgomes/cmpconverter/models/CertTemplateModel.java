@@ -91,8 +91,8 @@ public class CertTemplateModel {
         }
 
         if(certTemplate.getSerialNumber() != null) {
-            String serialNumber = Utils.decodeHexBytesToString(certTemplate.getSerialNumber().getEncoded());
-            this.setSerialNumber(serialNumber.substring(2));
+            String serialNumber = Utils.encodeToHexString(Utils.encodeBigInteger(certTemplate.getSerialNumber().getValue()));
+            this.setSerialNumber(serialNumber);
         }
 
         if (certTemplate.getPublicKey() != null) {

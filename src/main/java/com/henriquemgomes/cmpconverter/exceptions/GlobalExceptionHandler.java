@@ -55,6 +55,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
       Map<String, String> body = new HashMap<>();
       body.put("field_type_error", ex.getMessage());
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      ex.printStackTrace(pw);
+      body.put("trace", sw.toString());
       return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
   }
 
