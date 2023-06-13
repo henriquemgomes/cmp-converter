@@ -8,6 +8,8 @@ public class PKIBodyModel {
     public static final String TYPE_INIT_REP = "ip";
     public static final String TYPE_CERT_REQ = "cr";
     public static final String TYPE_CERT_REP = "cp";
+    public static final String TYPE_REVOCATION_REQUEST = "rr";
+    public static final String TYPE_REVOCATION_RESPONSE = "rp";
 
     @JsonIgnore
     private String type;

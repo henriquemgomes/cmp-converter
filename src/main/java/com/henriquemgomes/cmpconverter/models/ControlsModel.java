@@ -1,37 +1,48 @@
 package com.henriquemgomes.cmpconverter.models;
 
-import java.util.List;
+import org.bouncycastle.asn1.crmf.AttributeTypeAndValue;
+import org.bouncycastle.asn1.crmf.CRMFObjectIdentifiers;
+import org.bouncycastle.asn1.crmf.Controls;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
 
 
 //Controls  ::= SEQUENCE SIZE(1..MAX) OF AttributeTypeAndValue
 
+@Data
 public class ControlsModel {
     
-    @NotNull(message = "body.cert_req_messages.cert_req.cert_req_id.controls.attribute_type_and_value cannot be null")
-    @NotEmpty(message = "body.cert_req_messages.cert_req.cert_req_id.controls.attribute_type_and_value cannot be empty")
-    @JsonProperty("attribute_type_and_value")
-    private List<@Valid AttributeTypeAndValueModel> attributeTypeAndValueModels;
+    @JsonProperty("authenticator_control")
+    @Valid
+    private BasicControlModel authenticatorControl;
+
+    @JsonProperty("reg_token_control")
+    @Valid
+    private BasicControlModel regTokenControl;
 
     public ControlsModel() {
     }
 
-    public ControlsModel(List<AttributeTypeAndValueModel> attributeTypeAndValueModels) {
-        this.attributeTypeAndValueModels = attributeTypeAndValueModels;
+    public ControlsModel(Controls controls) {
+        AttributeTypeAndValue[] controlsArray = controls.toAttributeTypeAndValueArray();
+
+        for (AttributeTypeAndValue attributeTypeAndValue : controlsArray) {
+            BasicControlModel basicControlModel = new BasicControlModel();
+            if(attributeTypeAndValue.getType().toString().equals(CRMFObjectIdentifiers.id_regCtrl_authenticator.toString())){
+                basicControlModel.setValue(attributeTypeAndValue.getValue().toString());
+                this.setAuthenticatorControl(basicControlModel);
+            }
+
+            if(attributeTypeAndValue.getType().equals(CRMFObjectIdentifiers.id_regCtrl_regToken)){
+                basicControlModel.setValue(attributeTypeAndValue.getValue().toString());
+                this.setRegTokenControl(basicControlModel);
+            }
+        }
     }
 
-    public List<AttributeTypeAndValueModel> getAttributeTypeAndValueModels() {
-        return this.attributeTypeAndValueModels;
-    }
 
-    public void setAttributeTypeAndValueModels(List<AttributeTypeAndValueModel> attributeTypeAndValueModels) {
-        this.attributeTypeAndValueModels = attributeTypeAndValueModels;
-    }
-    
 }

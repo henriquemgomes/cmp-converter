@@ -1,11 +1,9 @@
 package com.henriquemgomes.cmpconverter.models;
 
-import java.util.List;
+import java.io.IOException;
+import org.bouncycastle.asn1.crmf.CertReqMsg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 
 
 
@@ -19,23 +17,30 @@ import jakarta.validation.constraints.NotNull;
  */
 
 public class CertReqMsgModel {
-    @NotNull(message = "body.cert_req_messages.Array<cert_req> is required")
+
     @JsonProperty("cert_req")
-    @Valid
     private CertRequestModel certReq;
-    //TODO private ProofOfPossession popo;
+
+    private ProofOfPossessionModel popo;
 
     @JsonProperty("reg_info")
-    private List<@Valid AttributeTypeAndValueModel> regInfo;
+    private RegInfoModel regInfo;
 
     public CertReqMsgModel() {
+    }
+
+    public CertReqMsgModel(CertReqMsg certReqMsg) throws IOException {
+        CertRequestModel certRequestModel = new CertRequestModel(certReqMsg.getCertReq());
+        this.setCertReq(certRequestModel);
+        RegInfoModel regInfoModel = new RegInfoModel(certReqMsg.getRegInfo());
+        this.setRegInfo(regInfoModel);
     }
 
     public CertReqMsgModel(CertRequestModel certReq) {
         this.certReq = certReq;
     }
 
-    public CertReqMsgModel(CertRequestModel certReq, List<AttributeTypeAndValueModel> regInfo) {
+    public CertReqMsgModel(CertRequestModel certReq, RegInfoModel regInfo) {
         this.certReq = certReq;
         this.regInfo = regInfo;
     }
@@ -48,12 +53,20 @@ public class CertReqMsgModel {
         this.certReq = certReq;
     }
 
-    public List<AttributeTypeAndValueModel> getRegInfo() {
+    public RegInfoModel getRegInfo() {
         return this.regInfo;
     }
 
-    public void setRegInfo(List<AttributeTypeAndValueModel> regInfo) {
+    public void setRegInfo(RegInfoModel regInfo) {
         this.regInfo = regInfo;
+    }
+
+    public ProofOfPossessionModel getPopo() {
+        return this.popo;
+    }
+
+    public void setPopo(ProofOfPossessionModel popo) {
+        this.popo = popo;
     }
 
 

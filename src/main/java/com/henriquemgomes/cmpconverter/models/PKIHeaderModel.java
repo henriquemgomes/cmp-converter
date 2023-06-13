@@ -1,6 +1,17 @@
 package com.henriquemgomes.cmpconverter.models;
 
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.cmp.InfoTypeAndValue;
+import org.bouncycastle.asn1.cmp.PKIHeader;
+import org.bouncycastle.asn1.x500.X500Name;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.henriquemgomes.cmpconverter.Utils;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -26,10 +37,10 @@ public class PKIHeaderModel {
     */
     
     @NotNull(message = "header.sender is required.")
-    private String sender;
+    private DistinguishedNameModel sender;
 
     @NotNull(message = "header.recipient is required.")
-    private String recipient;
+    private DistinguishedNameModel recipient;
 
     @JsonProperty("message_time")
     private String messageTime;
@@ -53,24 +64,88 @@ public class PKIHeaderModel {
     private String recipNonce;
 
     @JsonProperty("general_info")
-    private String generalInfo;
+    private InfoTypeAndValueModel generalInfo;
 
     public PKIHeaderModel() {
     }
 
-    public String getSender() {
+    public PKIHeaderModel(PKIHeader pkiHeader) throws IOException, ParseException {
+        if (pkiHeader.getSender() != null) {
+            this.sender = Utils.parseDn(X500Name.getInstance(pkiHeader.getSender().getName()).getRDNs());
+        }
+
+        if (pkiHeader.getRecipient() != null) {
+            this.recipient = Utils.parseDn(X500Name.getInstance(pkiHeader.getRecipient().getName()).getRDNs());
+        }
+
+        if (pkiHeader.getMessageTime() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdf.setLenient(false);
+            this.messageTime = sdf.format(pkiHeader.getMessageTime().getDate());
+        }
+
+        if (pkiHeader.getProtectionAlg() != null) {
+            this.protectionAlg = pkiHeader.getProtectionAlg().getAlgorithm().getId();
+        }
+
+        if (pkiHeader.getSenderKID() != null) {
+            this.senderKID = Utils.encodeToHexString(pkiHeader.getSenderKID().getOctets());
+        }
+
+        if (pkiHeader.getRecipKID() != null) {
+            this.recipKID = Utils.encodeToHexString(pkiHeader.getRecipKID().getOctets());
+        }
+
+        if (pkiHeader.getTransactionID() != null) {
+            this.transactionID = Utils.decodeHexBytesToString(pkiHeader.getTransactionID().getOctets());
+        }
+
+        if (pkiHeader.getSenderNonce() != null) {
+            this.senderNonce = Utils.encodeToHexString(pkiHeader.getSenderNonce().getOctets());
+        }
+
+        if (pkiHeader.getRecipNonce() != null) {
+            this.recipNonce = Utils.encodeToHexString(pkiHeader.getRecipNonce().getOctets());
+        }
+
+        if (pkiHeader.getGeneralInfo() != null) {
+            this.generalInfo = new InfoTypeAndValueModel();
+            InfoTypeAndValue[] generalInfo = pkiHeader.getGeneralInfo();
+
+            for (InfoTypeAndValue infoTypeAndValue : generalInfo) {
+                if(infoTypeAndValue.getInfoType().toString().equals("1.3.6.1.5.5.7.4.13")) {
+                    BasicInfoTypeAndValueModel implicitConfirm = new BasicInfoTypeAndValueModel();
+                    implicitConfirm.setValue(null);
+                    this.generalInfo.setImplicitConfirm(implicitConfirm);
+                }
+                if(infoTypeAndValue.getInfoType().toString().equals("1.3.6.1.5.5.7.4.14")) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+                    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    sdf.setLenient(false);
+
+                    BasicInfoTypeAndValueModel confirmWaitTime = new BasicInfoTypeAndValueModel();
+                    ASN1GeneralizedTime generalizedTime = ASN1GeneralizedTime.getInstance(infoTypeAndValue.getInfoValue());
+                    confirmWaitTime.setValue(sdf.format(generalizedTime.getDate()));
+                    this.generalInfo.setConfirmWaitTime(confirmWaitTime);
+                }
+            }
+        }
+    }
+
+    public DistinguishedNameModel getSender() {
         return this.sender;
     }
 
-    public void setSender(String sender) {
+    public void setSender(DistinguishedNameModel sender) {
         this.sender = sender;
     }
 
-    public String getRecipient() {
+    public DistinguishedNameModel getRecipient() {
         return this.recipient;
     }
 
-    public void setRecipient(String recipient) {
+    public void setRecipient(DistinguishedNameModel recipient) {
         this.recipient = recipient;
     }
 
@@ -130,11 +205,11 @@ public class PKIHeaderModel {
         this.recipNonce = recipNonce;
     }
 
-    public String getGeneralInfo() {
+    public InfoTypeAndValueModel getGeneralInfo() {
         return this.generalInfo;
     }
 
-    public void setGeneralInfo(String generalInfo) {
+    public void setGeneralInfo(InfoTypeAndValueModel generalInfo) {
         this.generalInfo = generalInfo;
     }
 }

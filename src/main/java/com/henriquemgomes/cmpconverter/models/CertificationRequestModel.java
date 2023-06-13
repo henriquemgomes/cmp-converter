@@ -1,8 +1,14 @@
 package com.henriquemgomes.cmpconverter.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.asn1.crmf.CertReqMessages;
+import org.bouncycastle.asn1.crmf.CertReqMsg;
+import org.springframework.http.HttpStatus;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.henriquemgomes.cmpconverter.exceptions.CmpConverterException;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -32,6 +38,29 @@ public class CertificationRequestModel extends PKIBodyModel {
 
     public void setCertReqMessages(List<CertReqMsgModel> certReqMessages) {
         this.certReqMessages = certReqMessages;
+    }
+
+    public void instantiate(CertReqMessages certReqMessages) throws CmpConverterException {
+        try {
+            this.certReqMessages = new ArrayList<>();
+            
+            CertReqMsg[] certReqMsgs = certReqMessages.toCertReqMsgArray();
+
+            for (CertReqMsg certReqMsg : certReqMsgs) {
+                CertReqMsgModel certReqMsgModel = new CertReqMsgModel(certReqMsg);
+        
+                this.certReqMessages.add(certReqMsgModel);
+            }
+            
+        } catch (Exception e) {
+            throw new CmpConverterException(
+                "cmp.error.instantiate.certification.request.model",
+                "Failed to create a CertificationRequest instance: "+ e.getLocalizedMessage(),
+                2000,
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                null
+            );
+        }
     }
     
 }

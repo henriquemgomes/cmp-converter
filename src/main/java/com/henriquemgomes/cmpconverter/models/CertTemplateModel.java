@@ -1,6 +1,16 @@
 package com.henriquemgomes.cmpconverter.models;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+
+import org.apache.tomcat.util.codec.binary.Base64;
+import org.bouncycastle.asn1.crmf.CertTemplate;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.henriquemgomes.cmpconverter.Utils;
+import com.henriquemgomes.cmpconverter.deserializers.CertTemplateModelDeserializer;
 
 import jakarta.validation.Valid;
 
@@ -29,7 +39,7 @@ public class CertTemplateModel {
     @JsonProperty("signing_alg")
     private String signingAlg;
 
-    private String issuer;
+    private DistinguishedNameModel issuer;
 
     private OptionalValidityModel validity;
     
@@ -48,6 +58,64 @@ public class CertTemplateModel {
     private ExtensionsModel extensions;
 
     public CertTemplateModel() {
+    }
+
+    public CertTemplateModel(CertTemplate certTemplate) throws IOException {
+
+        if (certTemplate.getVersion() > 0) {
+            this.setVersion(String.valueOf(certTemplate.getVersion()));
+        }
+
+        if(certTemplate.getValidity() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdf.setLenient(false);
+
+            OptionalValidityModel optionalValidity = new OptionalValidityModel();
+
+            if(certTemplate.getValidity().getNotBefore() != null)
+                optionalValidity.setNotBefore(sdf.format(certTemplate.getValidity().getNotBefore().getDate()));
+
+            if(certTemplate.getValidity().getNotAfter() != null)
+                optionalValidity.setNotAfter(sdf.format(certTemplate.getValidity().getNotAfter().getDate()));
+
+                this.setValidity(optionalValidity);
+        }
+
+        if (certTemplate.getIssuer() != null) {
+            this.setIssuer(Utils.parseDn(certTemplate.getIssuer().getRDNs()));
+        }
+
+        if (certTemplate.getSubject() != null) {
+            this.setSubject(Utils.parseDn(certTemplate.getSubject().getRDNs()));
+        }
+
+        if(certTemplate.getSerialNumber() != null) {
+            String serialNumber = Utils.encodeToHexString(Utils.encodeBigInteger(certTemplate.getSerialNumber().getValue()));
+            this.setSerialNumber(serialNumber);
+        }
+
+        if (certTemplate.getPublicKey() != null) {
+            this.setPublicKey(Base64.encodeBase64String(certTemplate.getPublicKey().getEncoded()));
+        }
+
+        if (certTemplate.getSigningAlg() != null) {
+            this.setSigningAlg(certTemplate.getSigningAlg().toString());
+        }
+
+        if (certTemplate.getExtensions() != null) {
+            // ExtensionsModel regInfoExtensionsModel = this.generateExtensionsModel(certTemplate.getExtensions());   
+            ExtensionsModel extensionsModel = new ExtensionsModel(certTemplate.getExtensions());   
+            this.setExtensions(extensionsModel);
+        }
+        
+        if (certTemplate.getSubjectUID() != null) {
+            this.setSubjectUID(Utils.encodeToHexString(certTemplate.getSubjectUID().getBytes()));
+        }
+
+        if (certTemplate.getIssuerUID() != null) {
+            this.setIssuerUID(Utils.encodeToHexString(certTemplate.getIssuerUID().getBytes()));
+        }
     }
 
     public String getVersion() {
@@ -74,11 +142,11 @@ public class CertTemplateModel {
         this.signingAlg = signingAlg;
     }
 
-    public String getIssuer() {
+    public DistinguishedNameModel getIssuer() {
         return this.issuer;
     }
 
-    public void setIssuer(String issuer) {
+    public void setIssuer(DistinguishedNameModel issuer) {
         this.issuer = issuer;
     }
 
