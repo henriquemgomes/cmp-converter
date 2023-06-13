@@ -1,4 +1,4 @@
-package com.henriquemgomes.serializers;
+package com.henriquemgomes.cmpconverter.serializers;
 
 import java.io.IOException;
 

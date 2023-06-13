@@ -15,10 +15,10 @@ import com.henriquemgomes.cmpconverter.models.PKIBodyModel;
 // import com.henriquemgomes.cmpconverter.models.PKIBodyModel;
 import com.henriquemgomes.cmpconverter.models.PKIHeaderModel;
 import com.henriquemgomes.cmpconverter.models.RevReqContentModel;
+import com.henriquemgomes.cmpconverter.serializers.CreateMessageDtoSerializer;
 import com.henriquemgomes.cmpconverter.models.RevRepContentModel;
 // import com.henriquemgomes.cmpconverter.validation.Conditional;
 import com.henriquemgomes.cmpconverter.validation.Conditional;
-import com.henriquemgomes.serializers.CreateMessageDtoSerializer;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
