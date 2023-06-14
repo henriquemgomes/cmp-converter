@@ -28,21 +28,21 @@ public class ControlsModel {
     }
 
     public ControlsModel(Controls controls) {
-        AttributeTypeAndValue[] controlsArray = controls.toAttributeTypeAndValueArray();
+        if(controls != null) {
+            AttributeTypeAndValue[] controlsArray = controls.toAttributeTypeAndValueArray();
 
-        for (AttributeTypeAndValue attributeTypeAndValue : controlsArray) {
-            BasicControlModel basicControlModel = new BasicControlModel();
-            if(attributeTypeAndValue.getType().toString().equals(CRMFObjectIdentifiers.id_regCtrl_authenticator.toString())){
-                basicControlModel.setValue(attributeTypeAndValue.getValue().toString());
-                this.setAuthenticatorControl(basicControlModel);
-            }
-
-            if(attributeTypeAndValue.getType().equals(CRMFObjectIdentifiers.id_regCtrl_regToken)){
-                basicControlModel.setValue(attributeTypeAndValue.getValue().toString());
-                this.setRegTokenControl(basicControlModel);
+            for (AttributeTypeAndValue attributeTypeAndValue : controlsArray) {
+                BasicControlModel basicControlModel = new BasicControlModel();
+                if(attributeTypeAndValue.getType().toString().equals(CRMFObjectIdentifiers.id_regCtrl_authenticator.toString())){
+                    basicControlModel.setValue(attributeTypeAndValue.getValue().toString());
+                    this.setAuthenticatorControl(basicControlModel);
+                }
+    
+                if(attributeTypeAndValue.getType().equals(CRMFObjectIdentifiers.id_regCtrl_regToken)){
+                    basicControlModel.setValue(attributeTypeAndValue.getValue().toString());
+                    this.setRegTokenControl(basicControlModel);
+                }
             }
         }
     }
-
-
 }

@@ -28,45 +28,47 @@ public class RegInfoModel {
     }
 
     public RegInfoModel(AttributeTypeAndValue[] regInfo) throws IOException {
-        List<UTF8PairsModel> utf8PairsList = new ArrayList<>();
-            for (AttributeTypeAndValue attributeTypeAndValue : regInfo) {
-                if(attributeTypeAndValue.getType().toString().equals("1.3.6.1.5.5.7.7.5.2.1")){
-                    ASN1TaggedObject taggedObject = DERTaggedObject.getInstance(attributeTypeAndValue.getValue());
-                    utf8PairsList.add(new UTF8PairsModel(taggedObject.getBaseObject().toString()));
-                }
-
-                if(attributeTypeAndValue.getType().toString().equals("1.3.6.1.5.5.7.7.5.2.2")){
-                    CertRequest certRequest = CertRequest.getInstance(attributeTypeAndValue.getValue());
-                    CertRequestModel regInfoCertRequestModel = new CertRequestModel();
-                    CertTemplateModel regInfoCertTemplateModel = new CertTemplateModel(certRequest.getCertTemplate());
-
-                    regInfoCertRequestModel.setCertTemplate(regInfoCertTemplateModel);
-
-                    Controls regInfoControls = certRequest.getControls();
-    
-                    ControlsModel regInfoControlsModel = new ControlsModel();
-
-                    AttributeTypeAndValue[] regInfoControlsArray = regInfoControls.toAttributeTypeAndValueArray();
-
-                    for (AttributeTypeAndValue regInfoControl : regInfoControlsArray) {
-                        BasicControlModel basicControlModel = new BasicControlModel();
-                        if(regInfoControl.getType().toString().equals(CRMFObjectIdentifiers.id_regCtrl_authenticator.toString())){
-                            basicControlModel.setValue(regInfoControl.getValue().toString());
-                            regInfoControlsModel.setAuthenticatorControl(basicControlModel);
-                        }
-
-                        if(regInfoControl.getType().equals(CRMFObjectIdentifiers.id_regCtrl_regToken)){
-                            basicControlModel.setValue(regInfoControl.getValue().toString());
-                            regInfoControlsModel.setRegTokenControl(basicControlModel);
-                        }
+        if(regInfo != null) {
+            List<UTF8PairsModel> utf8PairsList = new ArrayList<>();
+                for (AttributeTypeAndValue attributeTypeAndValue : regInfo) {
+                    if(attributeTypeAndValue.getType().toString().equals("1.3.6.1.5.5.7.7.5.2.1")){
+                        ASN1TaggedObject taggedObject = DERTaggedObject.getInstance(attributeTypeAndValue.getValue());
+                        utf8PairsList.add(new UTF8PairsModel(taggedObject.getBaseObject().toString()));
                     }
-
-                    regInfoCertRequestModel.setControls(regInfoControlsModel);
-                    this.setCertReq(regInfoCertRequestModel);
+    
+                    if(attributeTypeAndValue.getType().toString().equals("1.3.6.1.5.5.7.7.5.2.2")){
+                        CertRequest certRequest = CertRequest.getInstance(attributeTypeAndValue.getValue());
+                        CertRequestModel regInfoCertRequestModel = new CertRequestModel();
+                        CertTemplateModel regInfoCertTemplateModel = new CertTemplateModel(certRequest.getCertTemplate());
+    
+                        regInfoCertRequestModel.setCertTemplate(regInfoCertTemplateModel);
+    
+                        Controls regInfoControls = certRequest.getControls();
+        
+                        ControlsModel regInfoControlsModel = new ControlsModel();
+    
+                        AttributeTypeAndValue[] regInfoControlsArray = regInfoControls.toAttributeTypeAndValueArray();
+    
+                        for (AttributeTypeAndValue regInfoControl : regInfoControlsArray) {
+                            BasicControlModel basicControlModel = new BasicControlModel();
+                            if(regInfoControl.getType().toString().equals(CRMFObjectIdentifiers.id_regCtrl_authenticator.toString())){
+                                basicControlModel.setValue(regInfoControl.getValue().toString());
+                                regInfoControlsModel.setAuthenticatorControl(basicControlModel);
+                            }
+    
+                            if(regInfoControl.getType().equals(CRMFObjectIdentifiers.id_regCtrl_regToken)){
+                                basicControlModel.setValue(regInfoControl.getValue().toString());
+                                regInfoControlsModel.setRegTokenControl(basicControlModel);
+                            }
+                        }
+    
+                        regInfoCertRequestModel.setControls(regInfoControlsModel);
+                        this.setCertReq(regInfoCertRequestModel);
+                    }
                 }
-            }
-
-            this.setUtf8pairs(utf8PairsList);
+    
+                this.setUtf8pairs(utf8PairsList);
+        }
     }
 
     public RegInfoModel(List<UTF8PairsModel> utf8pairs, CertRequestModel certReq) {
